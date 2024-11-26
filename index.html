@@ -56,7 +56,13 @@
     <div class="platform-container" id="platform-container"></div>
 
     <script>
-        const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
+        const brokerURL = 'wss://test.mosquitto.org:8081/mqtt'; // Reliable broker
+
+        const client = mqtt.connect(brokerURL, {
+            clientId: "web_client_" + Math.random().toString(16).substr(2, 8),
+            reconnectPeriod: 1000,
+            connectTimeout: 30000,
+        });
 
         client.on('connect', () => {
             console.log('Connected to MQTT');
@@ -69,6 +75,10 @@
                 const ledId = "led-platform-1";
                 updateLED(ledId, message.toString() === '1');
             }
+        });
+
+        client.on('error', (err) => {
+            console.error('Connection error: ', err);
         });
 
         function controlRelay(platform, action) {
