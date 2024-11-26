@@ -64,7 +64,7 @@
     </div>
 
     <script>
-        // MQTT Configuration
+        // MQTT Configuration (using HiveMQ public broker for example)
         const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
 
         // Connect to MQTT Broker
@@ -94,12 +94,11 @@
             return match ? match[1] : null;
         }
 
-        // Publish commands to control relays
-        function controlRelay(platform, relay, state) {
-            const command = JSON.stringify({ relay, state });
+        // Publish commands to control relays (Up, Down, Stop)
+        function controlRelay(platform, action) {
             const topic = `visakhapatnam/platform-${platform}/commands`;
-            client.publish(topic, command);
-            console.log(`Published to ${topic}: ${command}`);
+            client.publish(topic, action);
+            console.log(`Published to ${topic}: ${action}`);
         }
 
         // Update LED state
@@ -120,9 +119,9 @@
                     <div class="platform-heading">Platform ${platform}</div>
                     <div id="led-platform-${platform}" class="led"></div>
                     <div class="buttons">
-                        <button onclick="controlRelay(${platform}, 1, true)">Relay 1 ON</button>
-                        <button onclick="controlRelay(${platform}, 2, true)">Relay 2 ON</button>
-                        <button onclick="controlRelay(${platform}, 3, true)">Relay 3 ON</button>
+                        <button onclick="controlRelay(${platform}, 'up')">Up</button>
+                        <button onclick="controlRelay(${platform}, 'down')">Down</button>
+                        <button onclick="controlRelay(${platform}, 'stop')">Stop</button>
                     </div>
                 `;
                 platformContainer.appendChild(platformDiv);
