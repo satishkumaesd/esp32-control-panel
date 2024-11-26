@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tierra Automation1</title>
+    <title>Tierra Automation Esc</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
@@ -66,13 +66,18 @@
 
         client.on('connect', () => {
             console.log('Connected to MQTT');
-            client.subscribe('visakhapatnam/platform-1/notification');
+            // Subscribe to all platform notifications
+            for (let platform = 1; platform <= 8; platform++) {
+                client.subscribe(`visakhapatnam/platform-${platform}/notification`);
+            }
         });
 
         client.on('message', (topic, message) => {
             console.log(`Message received on ${topic}: ${message}`);
-            if (topic === 'visakhapatnam/platform-1/notification') {
-                const ledId = "led-platform-1";
+            const platformMatch = topic.match(/platform-(\d+)/);
+            if (platformMatch) {
+                const platform = platformMatch[1];
+                const ledId = `led-platform-${platform}`;
                 updateLED(ledId, message.toString() === '1');
             }
         });
@@ -96,7 +101,7 @@
 
         function generatePlatforms() {
             const platformContainer = document.getElementById('platform-container');
-            for (let platform = 1; platform <= 1; platform++) {
+            for (let platform = 1; platform <= 8; platform++) {
                 const platformDiv = document.createElement('div');
                 platformDiv.className = 'platform';
                 platformDiv.innerHTML = `
