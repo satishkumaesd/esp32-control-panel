@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Control Panel</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        #led { width: 20px; height: 20px; border-radius: 50%; background-color: red; margin: 10px auto; }
+        button { margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>ESP32 Control Panel</h1>
+    <div id="notifications"></div>
+    <div id="led"></div>
+    <button onclick="controlRelay(1, true)">Turn Relay 1 On</button>
+    <button onclick="controlRelay(1, false)">Turn Relay 1 Off</button>
+    <script>
+        const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
+
+        client.on('connect', () => {
+            console.log('Connected to MQTT');
+            client.subscribe('esp32/notification');
+        });
+
+        client.on('message', (topic, message) => {
+            if (topic === 'esp32/notification') {
+                const notification = document.getElementById('notifications');
+                notification.innerHTML += `<p>${message.toString()}</p>`;
+                updateLED(true);
+                setTimeout(() => updateLED(false), 2000);
+            }
+        });
+
+        function controlRelay(relay, state) {
+            client.publish('esp32/commands', JSON.stringify({ relay, state }));
+        }
+
+        function updateLED(state) {
+            const led = document.getElementById('led');
+            led.style.backgroundColor = state ? 'green' : 'red';
+        }
+    </script>
+</body>
+</html>
