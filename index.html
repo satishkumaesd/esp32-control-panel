@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tierra Automation3</title>
+    <title>Tierra Automation4</title>
     <style>
         /* Style for platforms and general layout */
         .platform {
@@ -41,7 +41,7 @@
         <div class="platform" id="platform-1">
             <div class="platform-heading">Platform 1 UP</div>
             <div id="led-platform-1" class="led"></div>
-            <div id="status-platform-1" class="status-text">Normal</div> <!-- Default status -->
+            <div id="status-platform-1" class="status-text">Normal</div>
             <div class="buttons">
                 <button onclick="controlRelay(1, 'up')">Up</button>
                 <button onclick="controlRelay(1, 'down')">Down</button>
@@ -140,6 +140,12 @@
     <script>
         // Wait until the library is loaded and then your code runs
         window.onload = function() {
+            // Ensure Paho is loaded before using
+            if (typeof Paho === "undefined") {
+                console.error("Paho MQTT library is not loaded properly.");
+                return;
+            }
+
             // MQTT Broker connection details
             const mqttBrokerUrl = "wss://broker.hivemq.com:8000/mqtt";
             const mqttClientId = "web-client";
