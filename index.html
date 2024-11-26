@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tierra Automation4</title>
+    <title>Tierra Automation5</title>
     <style>
-        /* Style for platforms and general layout */
         .platform {
             border: 2px solid #ccc;
             margin: 10px;
@@ -138,11 +137,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqtt.min.js"></script>
 
     <script>
-        // Wait until the library is loaded and then your code runs
         window.onload = function() {
-            // Ensure Paho is loaded before using
+            // Check if the Paho library is loaded before using it
             if (typeof Paho === "undefined") {
-                console.error("Paho MQTT library is not loaded properly.");
+                alert("Paho MQTT library is not loaded properly. Please check the network connection or try again later.");
                 return;
             }
 
@@ -166,6 +164,7 @@
                 },
                 onFailure: (error) => {
                     console.log("Failed to connect to MQTT Broker", error);
+                    alert("Unable to connect to MQTT Broker. Please try again.");
                 }
             });
 
