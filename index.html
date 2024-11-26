@@ -3,42 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Control Panel</title>
+    <title>ESP32 Platform Control</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
-        #led { width: 20px; height: 20px; border-radius: 50%; background-color: red; margin: 10px auto; }
-        button { margin: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .platform {
+            display: inline-block;
+            margin: 20px;
+            padding: 20px;
+            border: 2px solid #000;
+            border-radius: 10px;
+        }
+        .heading {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .led {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: red;
+            margin: 10px auto;
+        }
+        .buttons {
+            margin: 10px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
-    <h1>Platform 1 Up</h1>
-    <div id="notifications"></div>
-    <div id="led"></div>
-    <button onclick="controlRelay(1, true)"> Up </button>
-    <button onclick="controlRelay(2, true)">Down</button>
+    <h1>ESP32 Platform Control</h1>
+    <div id="platform-1-up" class="platform">
+        <div class="heading">Platform-1 Up</div>
+        <div id="led-up" class="led"></div>
+        <div class="buttons">
+            <button onclick="controlRelay('platform-1-up', 1, true)">Relay 1 ON</button>
+            <button onclick="controlRelay('platform-1-up', 2, true)">Relay 2 ON</button>
+            <button onclick="controlRelay('platform-1-up', 3, true)">Relay 3 ON</button>
+        </div>
+    </div>
+    <div id="platform-1-down" class="platform">
+        <div class="heading">Platform-1 Down</div>
+        <div id="led-down" class="led"></div>
+        <div class="buttons">
+            <button onclick="controlRelay('platform-1-down', 1, true)">Relay 1 ON</button>
+            <button onclick="controlRelay('platform-1-down', 2, true)">Relay 2 ON</button>
+            <button onclick="controlRelay('platform-1-down', 3, true)">Relay 3 ON</button>
+        </div>
+    </div>
+
     <script>
+        // Connect to MQTT broker
         const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
 
         client.on('connect', () => {
             console.log('Connected to MQTT');
-            client.subscribe('esp32/notification');
+            // Subscribe to notification topics for each platform
+            client.subscribe('platform-1-up/notification');
+            client.subscribe('platform-1-down/notification');
         });
 
         client.on('message', (topic, message) => {
-            if (topic === 'esp32/notification') {
-                const notification = document.getElementById('notifications');
-                notification.innerHTML += `<p>${message.toString()}</p>`;
-                updateLED(true);
-                setTimeout(() => updateLED(false), 2000);
+            console.log(`Message received on ${topic}: ${message}`);
+            if (topic === 'platform-1-up/notification') {
+                updateLED('led-up', true);
+            } else if (topic === 'platform-1-down/notification') {
+                updateLED('led-down', true);
             }
+
+            // Turn off LED after 2 seconds
+            setTimeout(() => {
+                if (topic === 'platform-1-up/notification') updateLED('led-up', false);
+                if (topic === 'platform-1-down/notification') updateLED('led-down', false);
+            }, 2000);
         });
 
-        function controlRelay(relay, state) {
-            client.publish('esp32/commands', JSON.stringify({ relay, state }));
+        // Function to control relays
+        function controlRelay(platform, relay, state) {
+            const command = JSON.stringify({ relay, state });
+            client.publish(`${platform}/commands`, command);
+            console.log(`Published to ${platform}/commands: ${command}`);
         }
 
-        function updateLED(state) {
-            const led = document.getElementById('led');
+        // Function to update LED state
+        function updateLED(ledId, state) {
+            const led = document.getElementById(ledId);
             led.style.backgroundColor = state ? 'green' : 'red';
         }
     </script>
