@@ -4,152 +4,196 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tierra Automation</title>
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-        h1 {
-            font-size: 28px;
-            margin-bottom: 20px;
-        }
-        .platform-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+        /* Simple style for platforms */
         .platform {
-            width: 200px;
+            border: 2px solid #ccc;
             margin: 10px;
             padding: 10px;
-            border: 2px solid #000;
-            border-radius: 10px;
+            display: inline-block;
+            width: 200px;
             text-align: center;
         }
         .platform-heading {
-            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 10px;
         }
         .led {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+            width: 50px;
+            height: 50px;
             margin: 10px auto;
+            border-radius: 50%;
         }
         .status-text {
+            margin: 10px;
             font-size: 14px;
-            margin-top: 5px;
+            font-weight: bold;
         }
-        .buttons {
-            margin: 10px 0;
-        }
-        button {
+        .buttons button {
             margin: 5px;
-            padding: 5px 10px;
-            font-size: 12px;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Tierra Automation</h1>
-    <h2>Tierra's Escalator Control</h2>
-    <div class="platform-container" id="platform-container"></div>
+    <h1>Tierra's Escalator Control</h1>
+    <div id="platform-container">
+        <!-- Platform 1 -->
+        <div class="platform">
+            <div class="platform-heading">Platform 1 Up</div>
+            <div id="led-platform-1" class="led"></div>
+            <div id="status-platform-1" class="status-text">Normal</div> <!-- Default status -->
+            <div class="buttons">
+                <button onclick="controlRelay(1, 'up')">Up</button>
+                <button onclick="controlRelay(1, 'down')">Down</button>
+                <button onclick="controlRelay(1, 'stop')">Stop</button>
+            </div>
+        </div>
+
+        <!-- Platform 2 -->
+        <div class="platform">
+            <div class="platform-heading">Platform 1 Down</div>
+            <div id="led-platform-2" class="led"></div>
+            <div id="status-platform-2" class="status-text">Normal</div>
+            <div class="buttons">
+                <button onclick="controlRelay(2, 'up')">Up</button>
+                <button onclick="controlRelay(2, 'down')">Down</button>
+                <button onclick="controlRelay(2, 'stop')">Stop</button>
+            </div>
+        </div>
+
+        <!-- Platform 3 -->
+        <div class="platform">
+            <div class="platform-heading">Platform 3</div>
+            <div id="led-platform-3" class="led"></div>
+            <div id="status-platform-3" class="status-text">Normal</div>
+            <div class="buttons">
+                <button onclick="controlRelay(3, 'up')">Up</button>
+                <button onclick="controlRelay(3, 'down')">Down</button>
+                <button onclick="controlRelay(3, 'stop')">Stop</button>
+            </div>
+        </div>
+
+        <!-- Platform 4 -->
+        <div class="platform">
+            <div class="platform-heading">Platform 4</div>
+            <div id="led-platform-4" class="led"></div>
+            <div id="status-platform-4" class="status-text">Normal</div>
+            <div class="buttons">
+                <button onclick="controlRelay(4, 'up')">Up</button>
+                <button onclick="controlRelay(4, 'down')">Down</button>
+                <button onclick="controlRelay(4, 'stop')">Stop</button>
+            </div>
+        </div>
+
+        <!-- Platform 5 -->
+        <div class="platform">
+            <div class="platform-heading">Platform 5</div>
+            <div id="led-platform-5" class="led"></div>
+            <div id="status-platform-5" class="status-text">Normal</div>
+            <div class="buttons">
+                <button onclick="controlRelay(5, 'up')">Up</button>
+                <button onclick="controlRelay(5, 'down')">Down</button>
+                <button onclick="controlRelay(5, 'stop')">Stop</button>
+            </div>
+        </div>
+
+        <!-- Platform 6 -->
+        <div class="platform">
+            <div class="platform-heading">Platform 6</div>
+            <div id="led-platform-6" class="led"></div>
+            <div id="status-platform-6" class="status-text">Normal</div>
+            <div class="buttons">
+                <button onclick="controlRelay(6, 'up')">Up</button>
+                <button onclick="controlRelay(6, 'down')">Down</button>
+                <button onclick="controlRelay(6, 'stop')">Stop</button>
+            </div>
+        </div>
+
+        <!-- Platform 7 -->
+        <div class="platform">
+            <div class="platform-heading">Platform 7</div>
+            <div id="led-platform-7" class="led"></div>
+            <div id="status-platform-7" class="status-text">Normal</div>
+            <div class="buttons">
+                <button onclick="controlRelay(7, 'up')">Up</button>
+                <button onclick="controlRelay(7, 'down')">Down</button>
+                <button onclick="controlRelay(7, 'stop')">Stop</button>
+            </div>
+        </div>
+
+        <!-- Platform 8 -->
+        <div class="platform">
+            <div class="platform-heading">Platform 8</div>
+            <div id="led-platform-8" class="led"></div>
+            <div id="status-platform-8" class="status-text">Normal</div>
+            <div class="buttons">
+                <button onclick="controlRelay(8, 'up')">Up</button>
+                <button onclick="controlRelay(8, 'down')">Down</button>
+                <button onclick="controlRelay(8, 'stop')">Stop</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqtt.min.js"></script>
 
     <script>
-        const brokerURL = 'wss://test.mosquitto.org:8081/mqtt'; // Reliable broker
+        // MQTT Broker connection details
+        const mqttBrokerUrl = "wss://broker.hivemq.com:8000/mqtt";
+        const mqttClientId = "web-client";
+        const mqttTopicCommand = "visakhapatnam/platform/commands";
+        const mqttTopicStatus = "visakhapatnam/platform/status";
 
-        const client = mqtt.connect(brokerURL, {
-            clientId: "web_client_" + Math.random().toString(16).substr(2, 8),
-            reconnectPeriod: 1000,
-            connectTimeout: 30000,
-        });
+        // Create MQTT client
+        const client = new Paho.MQTT.Client(mqttBrokerUrl, mqttClientId);
 
-        client.on('connect', () => {
-            console.log('Connected to MQTT');
-            // Subscribe to all platform notifications (Emergency Stop / Normal)
-            for (let platform = 1; platform <= 8; platform++) {
-                client.subscribe(`visakhapatnam/platform-${platform}/notification`);
-                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`); // Subscribe for Emergency status
+        // Connect to the MQTT broker
+        client.connect({
+            onSuccess: () => {
+                console.log("Connected to MQTT Broker");
+                // After connecting, subscribe to status topic for each platform
+                for (let i = 1; i <= 8; i++) {
+                    client.subscribe(`visakhapatnam/platform-${i}/status`);
+                }
+            },
+            onFailure: (error) => {
+                console.log("Failed to connect to MQTT Broker", error);
             }
         });
 
-        client.on('message', (topic, message) => {
-            console.log(`Message received on ${topic}: ${message}`);
-            const platformMatch = topic.match(/platform-(\d+)/);
+        // Handle incoming messages from MQTT
+        client.onMessageArrived = (message) => {
+            const topic = message.destinationName;
+            const payload = message.payloadString;
+
+            // Extract platform number from the topic
+            const platformMatch = topic.match(/platform-(\d+)\//);
             if (platformMatch) {
-                const platform = platformMatch[1];
-                if (topic.includes("notification")) {
-                    const ledId = `led-platform-${platform}`;
-                    updateLED(ledId, message.toString() === '1');
-                } else if (topic.includes("emergencyStatus")) {
-                    updateStatus(platform, message.toString());
-                }
+                const platformNumber = platformMatch[1];
+                updatePlatformStatus(platformNumber, payload);
             }
-        });
+        };
 
-        client.on('error', (err) => {
-            console.error('Connection error: ', err);
-        });
+        // Update the LED and status text based on the button press or MQTT message
+        function updatePlatformStatus(platformNumber, status) {
+            const led = document.getElementById(`led-platform-${platformNumber}`);
+            const statusText = document.getElementById(`status-platform-${platformNumber}`);
 
+            if (status === "1") {
+                led.style.backgroundColor = "green"; // Normal
+                statusText.textContent = "Normal";
+            } else if (status === "0") {
+                led.style.backgroundColor = "red"; // Emergency Stop
+                statusText.textContent = "Emergency Stop";
+            }
+        }
+
+        // Function to control relay via MQTT
         function controlRelay(platform, action) {
-            const topic = `visakhapatnam/platform-${platform}/commands`;
-            client.publish(topic, action);
-            console.log(`Published to ${topic}: ${action}`);
+            const message = new Paho.MQTT.Message(action);
+            message.destinationName = `${mqttTopicCommand}/platform-${platform}`;
+            client.send(message);
         }
-
-        function updateLED(ledId, state) {
-            const led = document.getElementById(ledId);
-            const statusText = document.getElementById(`status-platform-${ledId.split('-')[2]}`);
-
-            if (led) {
-                if (state) {
-                    led.style.backgroundColor = 'green'; // LED green
-                    statusText.innerText = "Normal"; // Display Normal
-                } else {
-                    led.style.backgroundColor = 'red'; // LED red
-                    statusText.innerText = "Emergency Stop"; // Display Emergency Stop
-                }
-            }
-        }
-
-        function updateStatus(platform, status) {
-            const statusElement = document.getElementById(`status-platform-${platform}`);
-            const ledElement = document.getElementById(`led-platform-${platform}`);
-            if (statusElement) {
-                // Update status and LED based on the message
-                if (status === 'Emergency Stop') {
-                    statusElement.innerText = "Emergency Stop"; // Text for emergency
-                    ledElement.style.backgroundColor = "red"; // Red LED
-                } else {
-                    statusElement.innerText = "Normal"; // Text for normal
-                    ledElement.style.backgroundColor = "green"; // Green LED
-                }
-            }
-        }
-
-        function generatePlatforms() {
-            const platformContainer = document.getElementById('platform-container');
-            for (let platform = 1; platform <= 8; platform++) {
-                const platformDiv = document.createElement('div');
-                platformDiv.className = 'platform';
-                platformDiv.innerHTML = `
-                    <div class="platform-heading">Platform ${platform}</div>
-                    <div id="led-platform-${platform}" class="led"></div>
-                    <div id="status-platform-${platform}" class="status-text">Normal</div> <!-- Default status -->
-                    <div class="buttons">
-                        <button onclick="controlRelay(${platform}, 'up')">Up</button>
-                        <button onclick="controlRelay(${platform}, 'down')">Down</button>
-                        <button onclick="controlRelay(${platform}, 'stop')">Stop</button>
-                    </div>
-                `;
-                platformContainer.appendChild(platformDiv);
-            }
-        }
-
-        generatePlatforms();
     </script>
 </body>
 </html>
