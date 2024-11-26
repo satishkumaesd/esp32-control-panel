@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tierra Automation</title>
     <style>
-        /* Simple style for platforms */
+        /* Style for platforms and general layout */
         .platform {
             border: 2px solid #ccc;
             margin: 10px;
@@ -38,7 +38,7 @@
     <h1>Tierra's Escalator Control</h1>
     <div id="platform-container">
         <!-- Platform 1 UP -->
-        <div class="platform">
+        <div class="platform" id="platform-1">
             <div class="platform-heading">Platform 1 UP</div>
             <div id="led-platform-1" class="led"></div>
             <div id="status-platform-1" class="status-text">Normal</div> <!-- Default status -->
@@ -50,7 +50,7 @@
         </div>
 
         <!-- Platform 1 DOWN -->
-        <div class="platform">
+        <div class="platform" id="platform-2">
             <div class="platform-heading">Platform 1 DOWN</div>
             <div id="led-platform-2" class="led"></div>
             <div id="status-platform-2" class="status-text">Normal</div>
@@ -62,7 +62,7 @@
         </div>
 
         <!-- Platform 2/3 -->
-        <div class="platform">
+        <div class="platform" id="platform-3">
             <div class="platform-heading">Platform 2/3</div>
             <div id="led-platform-3" class="led"></div>
             <div id="status-platform-3" class="status-text">Normal</div>
@@ -74,7 +74,7 @@
         </div>
 
         <!-- Platform 4/5 -->
-        <div class="platform">
+        <div class="platform" id="platform-4">
             <div class="platform-heading">Platform 4/5</div>
             <div id="led-platform-4" class="led"></div>
             <div id="status-platform-4" class="status-text">Normal</div>
@@ -86,7 +86,7 @@
         </div>
 
         <!-- Platform 6/7 -->
-        <div class="platform">
+        <div class="platform" id="platform-5">
             <div class="platform-heading">Platform 6/7</div>
             <div id="led-platform-5" class="led"></div>
             <div id="status-platform-5" class="status-text">Normal</div>
@@ -98,7 +98,7 @@
         </div>
 
         <!-- Platform 8 UP -->
-        <div class="platform">
+        <div class="platform" id="platform-6">
             <div class="platform-heading">Platform 8 UP</div>
             <div id="led-platform-6" class="led"></div>
             <div id="status-platform-6" class="status-text">Normal</div>
@@ -110,7 +110,7 @@
         </div>
 
         <!-- Platform 8 DOWN -->
-        <div class="platform">
+        <div class="platform" id="platform-7">
             <div class="platform-heading">Platform 8 DOWN</div>
             <div id="led-platform-7" class="led"></div>
             <div id="status-platform-7" class="status-text">Normal</div>
@@ -122,7 +122,7 @@
         </div>
 
         <!-- Platform Spare -->
-        <div class="platform">
+        <div class="platform" id="platform-8">
             <div class="platform-heading">Platform Spare</div>
             <div id="led-platform-8" class="led"></div>
             <div id="status-platform-8" class="status-text">Normal</div>
@@ -132,67 +132,70 @@
                 <button onclick="controlRelay(8, 'stop')">Stop</button>
             </div>
         </div>
-
     </div>
 
+    <!-- Include Paho MQTT Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqtt.min.js"></script>
 
     <script>
-        // MQTT Broker connection details
-        const mqttBrokerUrl = "wss://broker.hivemq.com:8000/mqtt";
-        const mqttClientId = "web-client";
-        const mqttTopicCommand = "visakhapatnam/platform/commands";
-        const mqttTopicStatus = "visakhapatnam/platform/status";
+        // Wait until the library is loaded and then your code runs
+        window.onload = function() {
+            // MQTT Broker connection details
+            const mqttBrokerUrl = "wss://broker.hivemq.com:8000/mqtt";
+            const mqttClientId = "web-client";
+            const mqttTopicCommand = "visakhapatnam/platform/commands";
+            const mqttTopicStatus = "visakhapatnam/platform/status";
 
-        // Create MQTT client
-        const client = new Paho.MQTT.Client(mqttBrokerUrl, mqttClientId);
+            // Create MQTT client
+            const client = new Paho.MQTT.Client(mqttBrokerUrl, mqttClientId);
 
-        // Connect to the MQTT broker
-        client.connect({
-            onSuccess: () => {
-                console.log("Connected to MQTT Broker");
-                // After connecting, subscribe to status topic for each platform
-                for (let i = 1; i <= 8; i++) {
-                    client.subscribe(`visakhapatnam/platform-${i}/status`);
+            // Connect to the MQTT broker
+            client.connect({
+                onSuccess: () => {
+                    console.log("Connected to MQTT Broker");
+                    // After connecting, subscribe to status topic for each platform
+                    for (let i = 1; i <= 8; i++) {
+                        client.subscribe(`visakhapatnam/platform-${i}/status`);
+                    }
+                },
+                onFailure: (error) => {
+                    console.log("Failed to connect to MQTT Broker", error);
                 }
-            },
-            onFailure: (error) => {
-                console.log("Failed to connect to MQTT Broker", error);
+            });
+
+            // Handle incoming messages from MQTT
+            client.onMessageArrived = (message) => {
+                const topic = message.destinationName;
+                const payload = message.payloadString;
+
+                // Extract platform number from the topic
+                const platformMatch = topic.match(/platform-(\d+)\//);
+                if (platformMatch) {
+                    const platformNumber = platformMatch[1];
+                    updatePlatformStatus(platformNumber, payload);
+                }
+            };
+
+            // Update the LED and status text based on the button press or MQTT message
+            function updatePlatformStatus(platformNumber, status) {
+                const led = document.getElementById(`led-platform-${platformNumber}`);
+                const statusText = document.getElementById(`status-platform-${platformNumber}`);
+
+                if (status === "1") {
+                    led.style.backgroundColor = "green"; // Normal
+                    statusText.textContent = "Normal";
+                } else if (status === "0") {
+                    led.style.backgroundColor = "red"; // Emergency Stop
+                    statusText.textContent = "Emergency Stop";
+                }
             }
-        });
 
-        // Handle incoming messages from MQTT
-        client.onMessageArrived = (message) => {
-            const topic = message.destinationName;
-            const payload = message.payloadString;
-
-            // Extract platform number from the topic
-            const platformMatch = topic.match(/platform-(\d+)\//);
-            if (platformMatch) {
-                const platformNumber = platformMatch[1];
-                updatePlatformStatus(platformNumber, payload);
+            // Function to control relay via MQTT
+            function controlRelay(platform, action) {
+                const message = new Paho.MQTT.Message(action);
+                message.destinationName = `${mqttTopicCommand}/platform-${platform}`;
+                client.send(message);
             }
-        };
-
-        // Update the LED and status text based on the button press or MQTT message
-        function updatePlatformStatus(platformNumber, status) {
-            const led = document.getElementById(`led-platform-${platformNumber}`);
-            const statusText = document.getElementById(`status-platform-${platformNumber}`);
-
-            if (status === "1") {
-                led.style.backgroundColor = "green"; // Normal
-                statusText.textContent = "Normal";
-            } else if (status === "0") {
-                led.style.backgroundColor = "red"; // Emergency Stop
-                statusText.textContent = "Emergency Stop";
-            }
-        }
-
-        // Function to control relay via MQTT
-        function controlRelay(platform, action) {
-            const message = new Paho.MQTT.Message(action);
-            message.destinationName = `${mqttTopicCommand}/platform-${platform}`;
-            client.send(message);
         }
     </script>
 </body>
