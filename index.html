@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Platform Control</title>
+    <title>ESP32 Multi-Platform Control</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
@@ -11,15 +11,29 @@
             text-align: center;
             margin: 20px;
         }
+        .block {
+            margin-bottom: 40px;
+        }
+        .block-heading {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .platform-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
         .platform {
-            display: inline-block;
-            margin: 20px;
-            padding: 20px;
+            width: 200px;
+            margin: 10px;
+            padding: 10px;
             border: 2px solid #000;
             border-radius: 10px;
+            text-align: center;
         }
-        .heading {
-            font-size: 20px;
+        .platform-heading {
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 10px;
         }
@@ -35,67 +49,98 @@
         }
         button {
             margin: 5px;
-            padding: 10px 20px;
-            font-size: 14px;
+            padding: 5px 10px;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <h1>ESP32 Platform Control</h1>
-    <div id="platform-1-up" class="platform">
-        <div class="heading">Platform-1 Up</div>
-        <div id="led-up" class="led"></div>
-        <div class="buttons">
-            <button onclick="controlRelay('platform-1-up', 1, true)">Relay 1 ON</button>
-            <button onclick="controlRelay('platform-1-up', 2, true)">Relay 2 ON</button>
-            <button onclick="controlRelay('platform-1-up', 3, true)">Relay 3 ON</button>
-        </div>
-    </div>
-    <div id="platform-1-down" class="platform">
-        <div class="heading">Platform-1 Down</div>
-        <div id="led-down" class="led"></div>
-        <div class="buttons">
-            <button onclick="controlRelay('platform-1-down', 1, true)">Relay 1 ON</button>
-            <button onclick="controlRelay('platform-1-down', 2, true)">Relay 2 ON</button>
-            <button onclick="controlRelay('platform-1-down', 3, true)">Relay 3 ON</button>
-        </div>
-    </div>
+    <h1>ESP32 Multi-Platform Control</h1>
+
+    <!-- Blocks -->
+    <div id="blocks"></div>
 
     <script>
-        // Connect to MQTT broker
+        // MQTT Configuration
         const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
 
+        // Connect to MQTT Broker
         client.on('connect', () => {
             console.log('Connected to MQTT');
-            // Subscribe to notification topics for each platform
-            client.subscribe('platform-1-up/notification');
-            client.subscribe('platform-1-down/notification');
-        });
-
-        client.on('message', (topic, message) => {
-            console.log(`Message received on ${topic}: ${message}`);
-            const ledId = topic === 'platform-1-up/notification' ? 'led-up' : 'led-down';
-
-            // Update the LED color based on message value
-            if (message.toString() === '1') {
-                updateLED(ledId, true); // Turn green
-            } else if (message.toString() === '0') {
-                updateLED(ledId, false); // Turn red
+            // Subscribe to notification topics for all platforms
+            for (let block = 1; block <= 8; block++) {
+                for (let platform = 1; platform <= 8; platform++) {
+                    client.subscribe(`block-${block}/platform-${platform}/notification`);
+                }
             }
         });
 
-        // Function to control relays
-        function controlRelay(platform, relay, state) {
-            const command = JSON.stringify({ relay, state });
-            client.publish(`${platform}/commands`, command);
-            console.log(`Published to ${platform}/commands: ${command}`);
+        // Handle incoming messages
+        client.on('message', (topic, message) => {
+            console.log(`Message received on ${topic}: ${message}`);
+            const [block, platform] = parseTopic(topic);
+            const ledId = `led-block-${block}-platform-${platform}`;
+            if (message.toString() === '1') {
+                updateLED(ledId, true); // Turn LED green
+            } else if (message.toString() === '0') {
+                updateLED(ledId, false); // Turn LED red
+            }
+        });
+
+        // Parse the topic to extract block and platform
+        function parseTopic(topic) {
+            const match = topic.match(/block-(\d+)\/platform-(\d+)/);
+            return [match[1], match[2]];
         }
 
-        // Function to update LED state
+        // Publish commands to control relays
+        function controlRelay(block, platform, relay, state) {
+            const command = JSON.stringify({ relay, state });
+            const topic = `block-${block}/platform-${platform}/commands`;
+            client.publish(topic, command);
+            console.log(`Published to ${topic}: ${command}`);
+        }
+
+        // Update LED state
         function updateLED(ledId, state) {
             const led = document.getElementById(ledId);
-            led.style.backgroundColor = state ? 'green' : 'red';
+            if (led) {
+                led.style.backgroundColor = state ? 'green' : 'red';
+            }
         }
+
+        // Generate the HTML for all blocks and platforms
+        function generateBlocks() {
+            const blocksContainer = document.getElementById('blocks');
+            for (let block = 1; block <= 8; block++) {
+                const blockDiv = document.createElement('div');
+                blockDiv.className = 'block';
+                blockDiv.innerHTML = `<div class="block-heading">Block ${block}</div>`;
+
+                const platformContainer = document.createElement('div');
+                platformContainer.className = 'platform-container';
+
+                for (let platform = 1; platform <= 8; platform++) {
+                    const platformDiv = document.createElement('div');
+                    platformDiv.className = 'platform';
+                    platformDiv.innerHTML = `
+                        <div class="platform-heading">Platform ${platform}</div>
+                        <div id="led-block-${block}-platform-${platform}" class="led"></div>
+                        <div class="buttons">
+                            <button onclick="controlRelay(${block}, ${platform}, 1, true)">Relay 1 ON</button>
+                            <button onclick="controlRelay(${block}, ${platform}, 2, true)">Relay 2 ON</button>
+                            <button onclick="controlRelay(${block}, ${platform}, 3, true)">Relay 3 ON</button>
+                        </div>
+                    `;
+                    platformContainer.appendChild(platformDiv);
+                }
+                blockDiv.appendChild(platformContainer);
+                blocksContainer.appendChild(blockDiv);
+            }
+        }
+
+        // Initialize the blocks
+        generateBlocks();
     </script>
 </body>
 </html>
