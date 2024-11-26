@@ -52,6 +52,7 @@
 </head>
 <body>
     <h1>Tierra Automation</h1>
+    <h2>Tierra's Escalator Control</h2>
     <div class="platform-container" id="platform-container"></div>
 
     <script>
@@ -64,12 +65,9 @@
 
         client.on('message', (topic, message) => {
             console.log(`Message received on ${topic}: ${message}`);
-            const platform = 1; // Adjust platform ID based on topic if needed
-            const ledId = `led-platform-${platform}`;
-            if (message.toString() === '1') {
-                updateLED(ledId, true);
-            } else if (message.toString() === '0') {
-                updateLED(ledId, false);
+            if (topic === 'visakhapatnam/platform-1/notification') {
+                const ledId = "led-platform-1";
+                updateLED(ledId, message.toString() === '1');
             }
         });
 
