@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tierra Automation Platform Control</title>
+    <title>ESP32 Platform Control</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
@@ -74,17 +74,14 @@
 
         client.on('message', (topic, message) => {
             console.log(`Message received on ${topic}: ${message}`);
-            if (topic === 'platform-1-up/notification') {
-                updateLED('led-up', true);
-            } else if (topic === 'platform-1-down/notification') {
-                updateLED('led-down', true);
-            }
+            const ledId = topic === 'platform-1-up/notification' ? 'led-up' : 'led-down';
 
-            // Turn off LED after 2 seconds
-            setTimeout(() => {
-                if (topic === 'platform-1-up/notification') updateLED('led-up', false);
-                if (topic === 'platform-1-down/notification') updateLED('led-down', false);
-            }, 2000);
+            // Update the LED color based on message value
+            if (message.toString() === '1') {
+                updateLED(ledId, true); // Turn green
+            } else if (message.toString() === '0') {
+                updateLED(ledId, false); // Turn red
+            }
         });
 
         // Function to control relays
