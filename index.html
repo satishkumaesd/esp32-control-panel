@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tierra Automation Esc</title>
+    <title>Tierra Automation</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
@@ -21,7 +21,7 @@
             justify-content: center;
         }
         .platform {
-            width: 250px;
+            width: 200px;
             margin: 10px;
             padding: 10px;
             border: 2px solid #000;
@@ -39,6 +39,10 @@
             border-radius: 50%;
             background-color: red;
             margin: 10px auto;
+        }
+        .status-text {
+            font-size: 14px;
+            margin-top: 5px;
         }
         .buttons {
             margin: 10px 0;
@@ -66,9 +70,10 @@
 
         client.on('connect', () => {
             console.log('Connected to MQTT');
-            // Subscribe to all platform notifications
+            // Subscribe to all platform notifications (Emergency Stop / Normal)
             for (let platform = 1; platform <= 8; platform++) {
                 client.subscribe(`visakhapatnam/platform-${platform}/notification`);
+                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`); // Subscribe for Emergency status
             }
         });
 
@@ -77,8 +82,12 @@
             const platformMatch = topic.match(/platform-(\d+)/);
             if (platformMatch) {
                 const platform = platformMatch[1];
-                const ledId = `led-platform-${platform}`;
-                updateLED(ledId, message.toString() === '1');
+                if (topic.includes("notification")) {
+                    const ledId = `led-platform-${platform}`;
+                    updateLED(ledId, message.toString() === '1');
+                } else if (topic.includes("emergencyStatus")) {
+                    updateStatus(platform, message.toString());
+                }
             }
         });
 
@@ -99,6 +108,20 @@
             }
         }
 
+        function updateStatus(platform, status) {
+            const statusElement = document.getElementById(`status-platform-${platform}`);
+            if (statusElement) {
+                statusElement.innerText = status;
+                // Change LED color based on the status
+                const ledId = `led-platform-${platform}`;
+                if (status === 'Emergency Stop') {
+                    updateLED(ledId, false); // Red for Emergency Stop
+                } else {
+                    updateLED(ledId, true); // Green for Normal
+                }
+            }
+        }
+
         function generatePlatforms() {
             const platformContainer = document.getElementById('platform-container');
             for (let platform = 1; platform <= 8; platform++) {
@@ -107,6 +130,7 @@
                 platformDiv.innerHTML = `
                     <div class="platform-heading">Platform ${platform}</div>
                     <div id="led-platform-${platform}" class="led"></div>
+                    <div id="status-platform-${platform}" class="status-text">Normal</div> <!-- Default status -->
                     <div class="buttons">
                         <button onclick="controlRelay(${platform}, 'up')">Up</button>
                         <button onclick="controlRelay(${platform}, 'down')">Down</button>
