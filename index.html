@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tierra Automation2</title>
+    <title>Tierra Automation3</title>
     <style>
         /* Style for platforms and general layout */
         .platform {
@@ -191,7 +191,7 @@
             }
 
             // Function to control relay via MQTT
-            function controlRelay(platform, action) {
+            window.controlRelay = function(platform, action) {
                 const message = new Paho.MQTT.Message(action);
                 message.destinationName = `${mqttTopicCommand}/platform-${platform}`;
                 client.send(message);
