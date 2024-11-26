@@ -15,21 +15,13 @@
             font-size: 28px;
             margin-bottom: 20px;
         }
-        .block {
-            margin-bottom: 40px;
-        }
-        .block-heading {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
         .platform-container {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
         }
         .platform {
-            width: 250px;
+            width: 200px;
             margin: 10px;
             padding: 10px;
             border: 2px solid #000;
@@ -59,51 +51,34 @@
     </style>
 </head>
 <body>
-    <h1>Tierra's Escalator Control</h1>
-    <div class="block">
-        <div class="block-heading">Block:Visakhapatnam</div>
-        <div class="platform-container" id="platform-container"></div>
-    </div>
+    <h1>Tierra Automation</h1>
+    <div class="platform-container" id="platform-container"></div>
 
     <script>
-        // MQTT Configuration (using HiveMQ public broker for example)
         const client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
 
-        // Connect to MQTT Broker
         client.on('connect', () => {
             console.log('Connected to MQTT');
-            // Subscribe to notification topics for all platforms
-            for (let platform = 1; platform <= 8; platform++) {
-                client.subscribe(`visakhapatnam/platform-${platform}/notification`);
-            }
+            client.subscribe('visakhapatnam/platform-1/notification');
         });
 
-        // Handle incoming messages
         client.on('message', (topic, message) => {
             console.log(`Message received on ${topic}: ${message}`);
-            const platform = parseTopic(topic);
+            const platform = 1; // Adjust platform ID based on topic if needed
             const ledId = `led-platform-${platform}`;
             if (message.toString() === '1') {
-                updateLED(ledId, true); // Turn LED green
+                updateLED(ledId, true);
             } else if (message.toString() === '0') {
-                updateLED(ledId, false); // Turn LED red
+                updateLED(ledId, false);
             }
         });
 
-        // Parse the topic to extract the platform number
-        function parseTopic(topic) {
-            const match = topic.match(/platform-(\d+)/);
-            return match ? match[1] : null;
-        }
-
-        // Publish commands to control relays (Up, Down, Stop)
         function controlRelay(platform, action) {
             const topic = `visakhapatnam/platform-${platform}/commands`;
             client.publish(topic, action);
             console.log(`Published to ${topic}: ${action}`);
         }
 
-        // Update LED state
         function updateLED(ledId, state) {
             const led = document.getElementById(ledId);
             if (led) {
@@ -111,10 +86,9 @@
             }
         }
 
-        // Generate the HTML for platforms
         function generatePlatforms() {
             const platformContainer = document.getElementById('platform-container');
-            for (let platform = 1; platform <= 8; platform++) {
+            for (let platform = 1; platform <= 1; platform++) {
                 const platformDiv = document.createElement('div');
                 platformDiv.className = 'platform';
                 platformDiv.innerHTML = `
@@ -130,7 +104,6 @@
             }
         }
 
-        // Initialize the platforms
         generatePlatforms();
     </script>
 </body>
