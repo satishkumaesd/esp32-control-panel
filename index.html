@@ -37,7 +37,6 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background-color: red;
             margin: 10px auto;
         }
         .status-text {
@@ -103,21 +102,30 @@
 
         function updateLED(ledId, state) {
             const led = document.getElementById(ledId);
+            const statusText = document.getElementById(`status-platform-${ledId.split('-')[2]}`);
+
             if (led) {
-                led.style.backgroundColor = state ? 'green' : 'red';
+                if (state) {
+                    led.style.backgroundColor = 'green'; // LED green
+                    statusText.innerText = "Normal"; // Display Normal
+                } else {
+                    led.style.backgroundColor = 'red'; // LED red
+                    statusText.innerText = "Emergency Stop"; // Display Emergency Stop
+                }
             }
         }
 
         function updateStatus(platform, status) {
             const statusElement = document.getElementById(`status-platform-${platform}`);
+            const ledElement = document.getElementById(`led-platform-${platform}`);
             if (statusElement) {
-                statusElement.innerText = status;
-                // Change LED color based on the status
-                const ledId = `led-platform-${platform}`;
+                // Update status and LED based on the message
                 if (status === 'Emergency Stop') {
-                    updateLED(ledId, false); // Red for Emergency Stop
+                    statusElement.innerText = "Emergency Stop"; // Text for emergency
+                    ledElement.style.backgroundColor = "red"; // Red LED
                 } else {
-                    updateLED(ledId, true); // Green for Normal
+                    statusElement.innerText = "Normal"; // Text for normal
+                    ledElement.style.backgroundColor = "green"; // Green LED
                 }
             }
         }
