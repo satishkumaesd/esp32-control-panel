@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tierra Automation1</title>
+    <title>Tierra Automation</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
@@ -133,4 +133,23 @@
         function generatePlatforms() {
             const platformContainer = document.getElementById('platform-container');
             for (let platform = 1; platform <= 8; platform++) {
-                const platformDiv
+                const platformDiv = document.createElement('div');
+                platformDiv.className = 'platform';
+                platformDiv.innerHTML = `
+                    <div class="platform-heading">Platform ${platform}</div>
+                    <div id="led-platform-${platform}" class="led"></div>
+                    <div id="status-platform-${platform}" class="status-text">Normal</div> <!-- Default status -->
+                    <div class="buttons">
+                        <button onclick="controlRelay(${platform}, 'up')">Up</button>
+                        <button onclick="controlRelay(${platform}, 'down')">Down</button>
+                        <button onclick="controlRelay(${platform}, 'stop')">Stop</button>
+                    </div>
+                `;
+                platformContainer.appendChild(platformDiv);
+            }
+        }
+
+        generatePlatforms();
+    </script>
+</body>
+</html>
