@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TIERRA AUTOMATION</title>
+    <title>Tierra Automation</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin: 20px;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
         }
         .block {
             margin-bottom: 40px;
@@ -55,12 +59,9 @@
     </style>
 </head>
 <body>
-    <h1>TIERRA AUTOMATION </h1>
-    <h1>Platform Control</h1>
-
-    <!-- Block for Visakhapatnam -->
+    <h1>Tierra Automation</h1>
     <div class="block">
-        <div class="block-heading">Block: Visakhapatnam</div>
+        <div class="block-heading">Tierra's Escalator Control</div>
         <div class="platform-container" id="platform-container"></div>
     </div>
 
@@ -71,7 +72,7 @@
         // Connect to MQTT Broker
         client.on('connect', () => {
             console.log('Connected to MQTT');
-            // Subscribe to notification topics for all platforms in Visakhapatnam
+            // Subscribe to notification topics for all platforms
             for (let platform = 1; platform <= 8; platform++) {
                 client.subscribe(`visakhapatnam/platform-${platform}/notification`);
             }
