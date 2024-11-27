@@ -27,6 +27,7 @@
             border: 2px solid #000;
             border-radius: 10px;
             text-align: center;
+            position: relative; /* To place the online indicator in the top corner */
         }
         .platform-heading {
             font-size: 16px;
@@ -51,18 +52,21 @@
             padding: 5px 10px;
             font-size: 12px;
         }
+        /* Online Indicator in the top right corner */
         .online-indicator {
             width: 15px;
             height: 15px;
             border-radius: 50%;
-            display: inline-block;
-            margin-top: 5px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: red; /* Default red (offline) */
         }
         .online {
-            background-color: green;
+            background-color: green; /* Green when online */
         }
         .offline {
-            background-color: red;
+            background-color: red; /* Red when offline */
         }
     </style>
 </head>
@@ -211,9 +215,10 @@
             platformDiv.className = 'platform';
             platformDiv.innerHTML = `
                 <div class="platform-heading">Platform ${platformNumber}</div>
+                <!-- Online Status LED -->
+                <div id="online-indicator-${platformNumber}" class="online-indicator offline"></div>
                 <div id="led-platform-${platformNumber}" class="led"></div>
                 <div id="status-platform-${platformNumber}" class="status-text">Normal</div>
-                <div id="online-indicator-${platformNumber}" class="online-indicator offline"></div>
                 <div class="buttons">
                     <button onclick="controlRelay(${platformNumber}, 'up')">Up</button>
                     <button onclick="controlRelay(${platformNumber}, 'down')">Down</button>
