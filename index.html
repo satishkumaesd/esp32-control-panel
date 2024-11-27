@@ -39,6 +39,12 @@
             border-radius: 50%;
             margin: 20px auto;
         }
+        .small-led {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin: 5px auto;
+        }
         .status-text {
             font-size: 14px;
             margin-top: 5px;
@@ -55,7 +61,7 @@
 </head>
 <body>
     <h1>Tierra's Escalator Control</h1>
-    <h2>Block:Visakhapatnam</h2>
+    <h2>Block: Visakhapatnam</h2>
     <div class="platform-container" id="platform-container"></div>
 
     <script>
@@ -67,32 +73,60 @@
             connectTimeout: 30000,
         });
 
+        const platformStatus = {}; // Track the online status of platforms
+
         client.on('connect', () => {
             console.log('Connected to MQTT');
-            // Subscribe to all platform notifications (Emergency Stop / Normal)
             for (let platform = 1; platform <= 8; platform++) {
                 client.subscribe(`visakhapatnam/platform-${platform}/notification`);
-                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`); // Subscribe for Emergency status
+                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`);
+                client.subscribe(`visakhapatnam/platform-${platform}/onlineStatus`);
+
+                // Initialize platform status
+                platformStatus[platform] = { lastSeen: Date.now(), online: false };
             }
+            // Periodically check the online status
+            setInterval(checkOnlineStatus, 5000);
         });
 
         client.on('message', (topic, message) => {
             console.log(`Message received on ${topic}: ${message}`);
             const platformMatch = topic.match(/platform-(\d+)/);
             if (platformMatch) {
-                const platform = platformMatch[1];
+                const platform = parseInt(platformMatch[1]);
                 if (topic.includes("notification")) {
-                    const ledId = `led-platform-${platform}`;
-                    updateLED(ledId, message.toString() === '1');
+                    updateLED(`led-platform-${platform}`, message.toString() === '1');
                 } else if (topic.includes("emergencyStatus")) {
                     updateStatus(platform, message.toString());
+                } else if (topic.includes("onlineStatus")) {
+                    handleOnlineStatus(platform, message.toString());
                 }
             }
         });
 
-        client.on('error', (err) => {
-            console.error('Connection error: ', err);
-        });
+        function handleOnlineStatus(platform, status) {
+            const onlineLED = document.getElementById(`online-led-platform-${platform}`);
+            platformStatus[platform].lastSeen = Date.now();
+            platformStatus[platform].online = (status === 'online');
+
+            if (onlineLED) {
+                onlineLED.style.backgroundColor = platformStatus[platform].online ? 'green' : 'gray';
+            }
+        }
+
+        function checkOnlineStatus() {
+            const now = Date.now();
+            for (let platform in platformStatus) {
+                const onlineLED = document.getElementById(`online-led-platform-${platform}`);
+                if (now - platformStatus[platform].lastSeen > 6000) {
+                    // If no heartbeat in the last 6 seconds, mark as offline
+                    platformStatus[platform].online = false;
+                }
+                if (onlineLED) {
+                    onlineLED.style.backgroundColor = platformStatus[platform].online ? 'green' : 'gray';
+                }
+            }
+        }
 
         function controlRelay(platform, action) {
             const topic = `visakhapatnam/platform-${platform}/commands`;
@@ -103,14 +137,13 @@
         function updateLED(ledId, state) {
             const led = document.getElementById(ledId);
             const statusText = document.getElementById(`status-platform-${ledId.split('-')[2]}`);
-
             if (led) {
                 if (state) {
-                    led.style.backgroundColor = 'green'; // LED green
-                    statusText.innerText = "Normal"; // Display Normal
+                    led.style.backgroundColor = 'green';
+                    statusText.innerText = "Normal";
                 } else {
-                    led.style.backgroundColor = 'red'; // LED red
-                    statusText.innerText = "Emergency Stop"; // Display Emergency Stop
+                    led.style.backgroundColor = 'red';
+                    statusText.innerText = "Emergency Stop";
                 }
             }
         }
@@ -119,140 +152,36 @@
             const statusElement = document.getElementById(`status-platform-${platform}`);
             const ledElement = document.getElementById(`led-platform-${platform}`);
             if (statusElement) {
-                // Update status and LED based on the message
                 if (status === 'Emergency Stop') {
-                    statusElement.innerText = "Emergency Stop"; // Text for emergency
-                    ledElement.style.backgroundColor = "red"; // Red LED
+                    statusElement.innerText = "Emergency Stop";
+                    ledElement.style.backgroundColor = "red";
                 } else {
-                    statusElement.innerText = "Normal"; // Text for normal
-                    ledElement.style.backgroundColor = "green"; // Green LED
+                    statusElement.innerText = "Normal";
+                    ledElement.style.backgroundColor = "green";
                 }
             }
         }
 
-function generatePlatforms() {
-    const platformContainer = document.getElementById('platform-container');
+        function generatePlatforms() {
+            const platformContainer = document.getElementById('platform-container');
+            for (let platform = 1; platform <= 8; platform++) {
+                const platformDiv = document.createElement('div');
+                platformDiv.className = 'platform';
+                platformDiv.innerHTML = `
+                    <div class="platform-heading">Platform ${platform}</div>
+                    <div id="led-platform-${platform}" class="led"></div>
+                    <div id="online-led-platform-${platform}" class="small-led"></div>
+                    <div id="status-platform-${platform}" class="status-text">Normal</div>
+                    <div class="buttons">
+                        <button onclick="controlRelay(${platform}, 'up')">Up</button>
+                        <button onclick="controlRelay(${platform}, 'down')">Down</button>
+                        <button onclick="controlRelay(${platform}, 'stop')">Stop</button>
+                    </div>
+                `;
+                platformContainer.appendChild(platformDiv);
+            }
+        }
 
-    // Platform 1
-    const platformDiv1 = document.createElement('div');
-    platformDiv1.className = 'platform';
-    platformDiv1.innerHTML = `
-        <div class="platform-heading">Platform 1 Up</div>
-        <div id="led-platform-1" class="led"></div>
-        <div id="status-platform-1" class="status-text">Normal</div>
-        <div class="buttons">
-            <button onclick="controlRelay(1, 'up')">Up</button>
-            <button onclick="controlRelay(1, 'down')">Down</button>
-            <button onclick="controlRelay(1, 'stop')">Stop</button>
-        </div>
-    `;
-    platformContainer.appendChild(platformDiv1);
-
-    // Platform 2
-    const platformDiv2 = document.createElement('div');
-    platformDiv2.className = 'platform';
-    platformDiv2.innerHTML = `
-        <div class="platform-heading">Platform 1 Down</div>
-        <div id="led-platform-2" class="led"></div>
-        <div id="status-platform-2" class="status-text">Normal</div>
-        <div class="buttons">
-            <button onclick="controlRelay(2, 'up')">Up</button>
-            <button onclick="controlRelay(2, 'down')">Down</button>
-            <button onclick="controlRelay(2, 'stop')">Stop</button>
-        </div>
-    `;
-    platformContainer.appendChild(platformDiv2);
-
-    // Platform 3
-    const platformDiv3 = document.createElement('div');
-    platformDiv3.className = 'platform';
-    platformDiv3.innerHTML = `
-        <div class="platform-heading">Platform 2/3</div>
-        <div id="led-platform-3" class="led"></div>
-        <div id="status-platform-3" class="status-text">Normal</div>
-        <div class="buttons">
-            <button onclick="controlRelay(3, 'up')">Up</button>
-            <button onclick="controlRelay(3, 'down')">Down</button>
-            <button onclick="controlRelay(3, 'stop')">Stop</button>
-        </div>
-    `;
-    platformContainer.appendChild(platformDiv3);
-
-    // Platform 4
-    const platformDiv4 = document.createElement('div');
-    platformDiv4.className = 'platform';
-    platformDiv4.innerHTML = `
-        <div class="platform-heading">Platform 4/5</div>
-        <div id="led-platform-4" class="led"></div>
-        <div id="status-platform-4" class="status-text">Normal</div>
-        <div class="buttons">
-            <button onclick="controlRelay(4, 'up')">Up</button>
-            <button onclick="controlRelay(4, 'down')">Down</button>
-            <button onclick="controlRelay(4, 'stop')">Stop</button>
-        </div>
-    `;
-    platformContainer.appendChild(platformDiv4);
-
-    // Platform 5
-    const platformDiv5 = document.createElement('div');
-    platformDiv5.className = 'platform';
-    platformDiv5.innerHTML = `
-        <div class="platform-heading">Platform 6/7</div>
-        <div id="led-platform-5" class="led"></div>
-        <div id="status-platform-5" class="status-text">Normal</div>
-        <div class="buttons">
-            <button onclick="controlRelay(5, 'up')">Up</button>
-            <button onclick="controlRelay(5, 'down')">Down</button>
-            <button onclick="controlRelay(5, 'stop')">Stop</button>
-        </div>
-    `;
-    platformContainer.appendChild(platformDiv5);
-
-    // Platform 6
-    const platformDiv6 = document.createElement('div');
-    platformDiv6.className = 'platform';
-    platformDiv6.innerHTML = `
-        <div class="platform-heading">Platform 8 Up</div>
-        <div id="led-platform-6" class="led"></div>
-        <div id="status-platform-6" class="status-text">Normal</div>
-        <div class="buttons">
-            <button onclick="controlRelay(6, 'up')">Up</button>
-            <button onclick="controlRelay(6, 'down')">Down</button>
-            <button onclick="controlRelay(6, 'stop')">Stop</button>
-        </div>
-    `;
-    platformContainer.appendChild(platformDiv6);
-
-    // Platform 7
-    const platformDiv7 = document.createElement('div');
-    platformDiv7.className = 'platform';
-    platformDiv7.innerHTML = `
-        <div class="platform-heading">Platform 8 Down</div>
-        <div id="led-platform-7" class="led"></div>
-        <div id="status-platform-7" class="status-text">Normal</div>
-        <div class="buttons">
-            <button onclick="controlRelay(7, 'up')">Up</button>
-            <button onclick="controlRelay(7, 'down')">Down</button>
-            <button onclick="controlRelay(7, 'stop')">Stop</button>
-        </div>
-    `;
-    platformContainer.appendChild(platformDiv7);
-
-    // Platform 8
-    const platformDiv8 = document.createElement('div');
-    platformDiv8.className = 'platform';
-    platformDiv8.innerHTML = `
-        <div class="platform-heading">Platform S</div>
-        <div id="led-platform-8" class="led"></div>
-        <div id="status-platform-8" class="status-text">Normal</div>
-        <div class="buttons">
-            <button onclick="controlRelay(8, 'up')">Up</button>
-            <button onclick="controlRelay(8, 'down')">Down</button>
-            <button onclick="controlRelay(8, 'stop')">Stop</button>
-        </div>
-    `;
-    platformContainer.appendChild(platformDiv8);
-}
         generatePlatforms();
     </script>
 </body>
