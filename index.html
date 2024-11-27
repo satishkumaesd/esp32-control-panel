@@ -27,7 +27,6 @@
             border: 2px solid #000;
             border-radius: 10px;
             text-align: center;
-            position: relative;
         }
         .platform-heading {
             font-size: 16px;
@@ -56,10 +55,8 @@
             width: 15px;
             height: 15px;
             border-radius: 50%;
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            border: 1px solid #000;
+            display: inline-block;
+            margin-top: 5px;
         }
         .online {
             background-color: green;
@@ -71,7 +68,7 @@
 </head>
 <body>
     <h1>Tierra's Escalator Control</h1>
-    <h2>Block: Visakhapatnam</h2>
+    <h2>Block:Visakhapatnam</h2>
     <div class="platform-container" id="platform-container"></div>
 
     <script>
@@ -85,11 +82,11 @@
 
         client.on('connect', () => {
             console.log('Connected to MQTT');
-            // Subscribe to all platform notifications and online status
+            // Subscribe to all platform notifications (Emergency Stop / Normal)
             for (let platform = 1; platform <= 8; platform++) {
                 client.subscribe(`visakhapatnam/platform-${platform}/notification`);
-                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`); // Emergency status
-                client.subscribe(`visakhapatnam/platform-${platform}/onlineStatus`);   // Online status
+                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`); // Subscribe for Emergency status
+                client.subscribe(`visakhapatnam/platform-${platform}/onlineStatus`); // Subscribe for Online status
             }
         });
 
@@ -104,7 +101,7 @@
                 } else if (topic.includes("emergencyStatus")) {
                     updateStatus(platform, message.toString());
                 } else if (topic.includes("onlineStatus")) {
-                    updateOnlineIndicator(platform, message.toString() === '1');
+                    handleOnlineStatus(platform, message.toString() === '1');
                 }
             }
         });
@@ -112,6 +109,45 @@
         client.on('error', (err) => {
             console.error('Connection error: ', err);
         });
+
+        const OFFLINE_TIMEOUT = 5000; // 5 seconds
+        const platformTimeouts = {}; // Store timeouts for each platform
+
+        function handleOnlineStatus(platform, isOnline) {
+            const onlineIndicator = document.getElementById(`online-indicator-${platform}`);
+
+            if (isOnline) {
+                if (onlineIndicator) {
+                    onlineIndicator.classList.add('online');
+                    onlineIndicator.classList.remove('offline');
+                }
+
+                // Clear any existing timeout
+                if (platformTimeouts[platform]) {
+                    clearTimeout(platformTimeouts[platform]);
+                }
+
+                // Set a new timeout to mark as offline after the timeout duration
+                platformTimeouts[platform] = setTimeout(() => {
+                    updateOnlineIndicator(platform, false);
+                }, OFFLINE_TIMEOUT);
+            } else {
+                updateOnlineIndicator(platform, false);
+            }
+        }
+
+        function updateOnlineIndicator(platform, isOnline) {
+            const onlineIndicator = document.getElementById(`online-indicator-${platform}`);
+            if (onlineIndicator) {
+                if (isOnline) {
+                    onlineIndicator.classList.add('online');
+                    onlineIndicator.classList.remove('offline');
+                } else {
+                    onlineIndicator.classList.add('offline');
+                    onlineIndicator.classList.remove('online');
+                }
+            }
+        }
 
         function controlRelay(platform, action) {
             const topic = `visakhapatnam/platform-${platform}/commands`;
@@ -149,38 +185,42 @@
             }
         }
 
-        function updateOnlineIndicator(platform, isOnline) {
-            const onlineIndicator = document.getElementById(`online-indicator-${platform}`);
-            if (onlineIndicator) {
-                if (isOnline) {
-                    onlineIndicator.classList.add('online');
-                    onlineIndicator.classList.remove('offline');
-                } else {
-                    onlineIndicator.classList.add('offline');
-                    onlineIndicator.classList.remove('online');
-                }
-            }
-        }
-
         function generatePlatforms() {
             const platformContainer = document.getElementById('platform-container');
 
-            for (let i = 1; i <= 8; i++) {
-                const platformDiv = document.createElement('div');
-                platformDiv.className = 'platform';
-                platformDiv.innerHTML = `
-                    <div id="online-indicator-${i}" class="online-indicator offline"></div>
-                    <div class="platform-heading">Platform ${i}</div>
-                    <div id="led-platform-${i}" class="led"></div>
-                    <div id="status-platform-${i}" class="status-text">Normal</div>
-                    <div class="buttons">
-                        <button onclick="controlRelay(${i}, 'up')">Up</button>
-                        <button onclick="controlRelay(${i}, 'down')">Down</button>
-                        <button onclick="controlRelay(${i}, 'stop')">Stop</button>
-                    </div>
-                `;
-                platformContainer.appendChild(platformDiv);
-            }
+            // Platform 1
+            createPlatform(platformContainer, 1);
+            // Platform 2
+            createPlatform(platformContainer, 2);
+            // Platform 3
+            createPlatform(platformContainer, 3);
+            // Platform 4
+            createPlatform(platformContainer, 4);
+            // Platform 5
+            createPlatform(platformContainer, 5);
+            // Platform 6
+            createPlatform(platformContainer, 6);
+            // Platform 7
+            createPlatform(platformContainer, 7);
+            // Platform 8
+            createPlatform(platformContainer, 8);
+        }
+
+        function createPlatform(container, platformNumber) {
+            const platformDiv = document.createElement('div');
+            platformDiv.className = 'platform';
+            platformDiv.innerHTML = `
+                <div class="platform-heading">Platform ${platformNumber}</div>
+                <div id="led-platform-${platformNumber}" class="led"></div>
+                <div id="status-platform-${platformNumber}" class="status-text">Normal</div>
+                <div id="online-indicator-${platformNumber}" class="online-indicator offline"></div>
+                <div class="buttons">
+                    <button onclick="controlRelay(${platformNumber}, 'up')">Up</button>
+                    <button onclick="controlRelay(${platformNumber}, 'down')">Down</button>
+                    <button onclick="controlRelay(${platformNumber}, 'stop')">Stop</button>
+                </div>
+            `;
+            container.appendChild(platformDiv);
         }
 
         generatePlatforms();
