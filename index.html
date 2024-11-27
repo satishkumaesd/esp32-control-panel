@@ -91,7 +91,7 @@
     <div class="platform-container" id="platform-container"></div>
 
     <script>
-        const brokerURL = 'wss://test.mosquitto.org:8081/mqtt';
+        const brokerURL = 'wss://broker.hivemq.com:8000/mqtt'; // Updated to a more stable broker
         const connectionStatus = document.getElementById('connection-status');
         let reconnectTimeout = null;
 
@@ -100,6 +100,7 @@
             clientId: "web_client_" + Math.random().toString(16).substr(2, 8),
             reconnectPeriod: 5000, // Auto-reconnect after 5 seconds
             connectTimeout: 30000,
+            keepalive: 60, // Keep connection alive for 60 seconds
         });
 
         // MQTT connection event handlers
@@ -210,7 +211,7 @@
             for (let i = 1; i <= 8; i++) {
                 const platformDiv = document.createElement('div');
                 platformDiv.className = 'platform';
-                platformDiv.innerHTML = `
+                platformDiv.innerHTML = ` 
                     <div class="platform-heading">Platform ${i}</div>
                     <div id="led-platform-${i}" class="led"></div>
                     <div id="status-platform-${i}" class="status-text">Normal</div>
