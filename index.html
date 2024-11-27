@@ -3,69 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tierra Automation</title>
+    <title>Platform Status</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-        h1 {
-            font-size: 28px;
-            margin-bottom: 20px;
-        }
-        .platform-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
         .platform {
-            width: 250px;
             margin: 10px;
             padding: 10px;
-            border: 2px solid #000;
-            border-radius: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 300px;
+        }
+
+        .status-text {
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
             text-align: center;
         }
-        .platform-heading {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 10px;
+
+        .status-text.online {
+            background-color: green;
         }
-        .led {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin: 20px auto;
-        }
-        .small-led {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin: 5px auto;
-        }
-        .status-text {
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .buttons {
-            margin: 10px 0;
-        }
-        button {
-            margin: 5px;
-            padding: 5px 10px;
-            font-size: 12px;
+
+        .status-text.offline {
+            background-color: red;
         }
     </style>
 </head>
 <body>
-    <h1>Tierra's Escalator Control</h1>
-    <h2>Block: Visakhapatnam</h2>
-    <div class="platform-container" id="platform-container"></div>
+    <h1>Platform Status Dashboard</h1>
+    <div id="platform-3" class="platform">
+        <h2>Platform 3</h2>
+        <div id="online-status-platform-3" class="status-text offline">Offline</div>
+    </div>
 
     <script>
-        const brokerURL = 'wss://test.mosquitto.org:8081/mqtt'; // Reliable broker
+        const brokerURL = 'wss://test.mosquitto.org:8081/mqtt'; // Public MQTT broker
 
         const client = mqtt.connect(brokerURL, {
             clientId: "web_client_" + Math.random().toString(16).substr(2, 8),
@@ -73,116 +46,36 @@
             connectTimeout: 30000,
         });
 
-        const platformStatus = {}; // Track the online status of platforms
-
         client.on('connect', () => {
-            console.log('Connected to MQTT');
-            for (let platform = 1; platform <= 8; platform++) {
-                client.subscribe(`visakhapatnam/platform-${platform}/notification`);
-                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`);
-                client.subscribe(`visakhapatnam/platform-${platform}/onlineStatus`);
-
-                // Initialize platform status
-                platformStatus[platform] = { lastSeen: Date.now(), online: false };
-            }
-            // Periodically check the online status
-            setInterval(checkOnlineStatus, 5000);
+            console.log('Connected to MQTT broker');
+            client.subscribe("visakhapatnam/platform-3/onlineStatus");
         });
 
         client.on('message', (topic, message) => {
-            console.log(`Message received on ${topic}: ${message}`);
-            const platformMatch = topic.match(/platform-(\d+)/);
-            if (platformMatch) {
-                const platform = parseInt(platformMatch[1]);
-                if (topic.includes("notification")) {
-                    updateLED(`led-platform-${platform}`, message.toString() === '1');
-                } else if (topic.includes("emergencyStatus")) {
-                    updateStatus(platform, message.toString());
-                } else if (topic.includes("onlineStatus")) {
-                    handleOnlineStatus(platform, message.toString());
-                }
+            console.log(`Message received on topic ${topic}: ${message}`);
+            if (topic === "visakhapatnam/platform-3/onlineStatus") {
+                updateOnlineStatus("3", message.toString());
             }
         });
 
-        function handleOnlineStatus(platform, status) {
-            const onlineLED = document.getElementById(`online-led-platform-${platform}`);
-            platformStatus[platform].lastSeen = Date.now();
-            platformStatus[platform].online = (status === 'online');
+        client.on('error', (error) => {
+            console.error("MQTT Connection Error:", error);
+        });
 
-            if (onlineLED) {
-                onlineLED.style.backgroundColor = platformStatus[platform].online ? 'green' : 'gray';
-            }
-        }
-
-        function checkOnlineStatus() {
-            const now = Date.now();
-            for (let platform in platformStatus) {
-                const onlineLED = document.getElementById(`online-led-platform-${platform}`);
-                if (now - platformStatus[platform].lastSeen > 6000) {
-                    // If no heartbeat in the last 6 seconds, mark as offline
-                    platformStatus[platform].online = false;
-                }
-                if (onlineLED) {
-                    onlineLED.style.backgroundColor = platformStatus[platform].online ? 'green' : 'gray';
-                }
-            }
-        }
-
-        function controlRelay(platform, action) {
-            const topic = `visakhapatnam/platform-${platform}/commands`;
-            client.publish(topic, action);
-            console.log(`Published to ${topic}: ${action}`);
-        }
-
-        function updateLED(ledId, state) {
-            const led = document.getElementById(ledId);
-            const statusText = document.getElementById(`status-platform-${ledId.split('-')[2]}`);
-            if (led) {
-                if (state) {
-                    led.style.backgroundColor = 'green';
-                    statusText.innerText = "Normal";
-                } else {
-                    led.style.backgroundColor = 'red';
-                    statusText.innerText = "Emergency Stop";
-                }
-            }
-        }
-
-        function updateStatus(platform, status) {
-            const statusElement = document.getElementById(`status-platform-${platform}`);
-            const ledElement = document.getElementById(`led-platform-${platform}`);
+        function updateOnlineStatus(platform, status) {
+            const statusElement = document.getElementById(`online-status-platform-${platform}`);
             if (statusElement) {
-                if (status === 'Emergency Stop') {
-                    statusElement.innerText = "Emergency Stop";
-                    ledElement.style.backgroundColor = "red";
+                if (status === "1") {
+                    statusElement.classList.add("online");
+                    statusElement.classList.remove("offline");
+                    statusElement.innerText = "Online";
                 } else {
-                    statusElement.innerText = "Normal";
-                    ledElement.style.backgroundColor = "green";
+                    statusElement.classList.add("offline");
+                    statusElement.classList.remove("online");
+                    statusElement.innerText = "Offline";
                 }
             }
         }
-
-        function generatePlatforms() {
-            const platformContainer = document.getElementById('platform-container');
-            for (let platform = 1; platform <= 8; platform++) {
-                const platformDiv = document.createElement('div');
-                platformDiv.className = 'platform';
-                platformDiv.innerHTML = `
-                    <div class="platform-heading">Platform ${platform}</div>
-                    <div id="led-platform-${platform}" class="led"></div>
-                    <div id="online-led-platform-${platform}" class="small-led"></div>
-                    <div id="status-platform-${platform}" class="status-text">Normal</div>
-                    <div class="buttons">
-                        <button onclick="controlRelay(${platform}, 'up')">Up</button>
-                        <button onclick="controlRelay(${platform}, 'down')">Down</button>
-                        <button onclick="controlRelay(${platform}, 'stop')">Stop</button>
-                    </div>
-                `;
-                platformContainer.appendChild(platformDiv);
-            }
-        }
-
-        generatePlatforms();
     </script>
 </body>
 </html>
