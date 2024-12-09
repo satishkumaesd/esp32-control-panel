@@ -6,6 +6,7 @@
     <title>Tierra Automation</title>
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <style>
+        /* Styling remains unchanged */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
@@ -27,7 +28,7 @@
             border: 2px solid #000;
             border-radius: 10px;
             text-align: center;
-            position: relative; /* To place the online indicator in the top corner */
+            position: relative;
         }
         .platform-heading {
             font-size: 16px;
@@ -52,7 +53,6 @@
             padding: 5px 10px;
             font-size: 12px;
         }
-        /* Online Indicator in the top right corner */
         .online-indicator {
             width: 15px;
             height: 15px;
@@ -60,23 +60,23 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background-color: red; /* Default red (offline) */
+            background-color: red;
         }
         .online {
-            background-color: green; /* Green when online */
+            background-color: green;
         }
         .offline {
-            background-color: red; /* Red when offline */
+            background-color: red;
         }
     </style>
 </head>
 <body>
     <h1>Tierra's Escalator Control</h1>
-    <h2>Block:Visakhapatnam</h2>
+    <h2>Block: Visakhapatnam</h2>
     <div class="platform-container" id="platform-container"></div>
 
     <script>
-        const brokerURL = 'wss://test.mosquitto.org:8081/mqtt'; // Reliable broker
+        const brokerURL = 'wss://test.mosquitto.org:8081/mqtt'; // Public MQTT broker
 
         const client = mqtt.connect(brokerURL, {
             clientId: "web_client_" + Math.random().toString(16).substr(2, 8),
@@ -85,12 +85,12 @@
         });
 
         client.on('connect', () => {
-            console.log('Connected to MQTT');
-            // Subscribe to all platform notifications (Emergency Stop / Normal)
+            console.log('Connected to MQTT broker');
+            // Subscribe to all topics for each platform
             for (let platform = 1; platform <= 8; platform++) {
                 client.subscribe(`visakhapatnam/platform-${platform}/notification`);
-                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`); // Subscribe for Emergency status
-                client.subscribe(`visakhapatnam/platform-${platform}/onlineStatus`); // Subscribe for Online status
+                client.subscribe(`visakhapatnam/platform-${platform}/emergencyStatus`);
+                client.subscribe(`visakhapatnam/platform-${platform}/onlineStatus`);
             }
         });
 
@@ -100,8 +100,7 @@
             if (platformMatch) {
                 const platform = platformMatch[1];
                 if (topic.includes("notification")) {
-                    const ledId = `led-platform-${platform}`;
-                    updateLED(ledId, message.toString() === '1');
+                    updateLED(`led-platform-${platform}`, message.toString() === '1');
                 } else if (topic.includes("emergencyStatus")) {
                     updateStatus(platform, message.toString());
                 } else if (topic.includes("onlineStatus")) {
@@ -114,8 +113,8 @@
             console.error('Connection error: ', err);
         });
 
-        const OFFLINE_TIMEOUT = 5000; // 5 seconds
-        const platformTimeouts = {}; // Store timeouts for each platform
+        const OFFLINE_TIMEOUT = 10000; // 10 seconds for marking offline
+        const platformTimeouts = {};
 
         function handleOnlineStatus(platform, isOnline) {
             const onlineIndicator = document.getElementById(`online-indicator-${platform}`);
@@ -125,13 +124,9 @@
                     onlineIndicator.classList.add('online');
                     onlineIndicator.classList.remove('offline');
                 }
-
-                // Clear any existing timeout
                 if (platformTimeouts[platform]) {
                     clearTimeout(platformTimeouts[platform]);
                 }
-
-                // Set a new timeout to mark as offline after the timeout duration
                 platformTimeouts[platform] = setTimeout(() => {
                     updateOnlineIndicator(platform, false);
                 }, OFFLINE_TIMEOUT);
@@ -165,49 +160,41 @@
 
             if (led) {
                 if (state) {
-                    led.style.backgroundColor = 'green'; // LED green
-                    statusText.innerText = "Normal"; // Display Normal
+                    led.style.backgroundColor = 'green';
+                    statusText.innerText = "Normal";
                 } else {
-                    led.style.backgroundColor = 'red'; // LED red
-                    statusText.innerText = "Emergency Stop"; // Display Emergency Stop
+                    led.style.backgroundColor = 'red';
+                    statusText.innerText = "Emergency Stop";
                 }
             }
         }
 
         function updateStatus(platform, status) {
             const statusElement = document.getElementById(`status-platform-${platform}`);
-            const ledElement = document.getElementById(`led-platform-${platform}`);
             if (statusElement) {
-                // Update status and LED based on the message
                 if (status === 'Emergency Stop') {
-                    statusElement.innerText = "Emergency Stop"; // Text for emergency
-                    ledElement.style.backgroundColor = "red"; // Red LED
+                    statusElement.innerText = "Emergency Stop";
+                    document.getElementById(`led-platform-${platform}`).style.backgroundColor = "red";
                 } else {
-                    statusElement.innerText = "Normal"; // Text for normal
-                    ledElement.style.backgroundColor = "green"; // Green LED
+                    statusElement.innerText = "Normal";
+                    document.getElementById(`led-platform-${platform}`).style.backgroundColor = "green";
                 }
             }
         }
 
         function generatePlatforms() {
             const platformContainer = document.getElementById('platform-container');
+            const platforms = [
+                "Platform 1 UP", "Platform 1 DOWN", 
+                "Platform 2/3", "Platform 4/5", 
+                "Platform 6/7", "Platform 8 UP", 
+                "Platform 8 DOWN", "Platform S"
+            ];
 
-            // Platform 1 UP
-            createPlatform(platformContainer, 1, "Platform 1 UP");
-            // Platform 1 DOWN
-            createPlatform(platformContainer, 2, "Platform 1 DOWN");
-            // Platform 2/3
-            createPlatform(platformContainer, 3, "Platform 2/3");
-            // Platform 4/5
-            createPlatform(platformContainer, 4, "Platform 4/5");
-            // Platform 6
-            createPlatform(platformContainer, 5, "Platform 6/7");
-            // Platform 8 UP
-            createPlatform(platformContainer, 6, "Platform 8 UP");
-            // Platform 8 DOWN
-            createPlatform(platformContainer, 7, "Platform 8 DOWN");
-            // Platform S
-            createPlatform(platformContainer, 8, "Platform S");
+            platforms.forEach((name, index) => {
+                const platformNumber = index + 1;
+                createPlatform(platformContainer, platformNumber, name);
+            });
         }
 
         function createPlatform(container, platformNumber, platformName) {
@@ -215,7 +202,6 @@
             platformDiv.className = 'platform';
             platformDiv.innerHTML = `
                 <div class="platform-heading">${platformName}</div>
-                <!-- Online Status LED -->
                 <div id="online-indicator-${platformNumber}" class="online-indicator offline"></div>
                 <div id="led-platform-${platformNumber}" class="led"></div>
                 <div id="status-platform-${platformNumber}" class="status-text">Normal</div>
