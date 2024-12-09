@@ -76,7 +76,7 @@
     <div class="platform-container" id="platform-container"></div>
 
     <script>
-const brokerURL = 'wss://broker.hivemq.com:8000/mqtt';
+const brokerURL = 'wss://mqtt.eclipseprojects.io:443/mqtt'; // Eclipse Mosquitto WebSocket Broker
 
         const client = mqtt.connect(brokerURL, {
             clientId: "web_client_" + Math.random().toString(16).substr(2, 8),
